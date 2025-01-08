@@ -7,7 +7,7 @@ from skfuzzy import control as ctrl
 import traceback
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://rococo-pony-78a98c.netlify.app/"]}})
+CORS(app, resources={r"/*": {"origins": ["https://hr-expert-system.netlify.app"]}})
 
 # Define fuzzy variables
 cgpa = ctrl.Antecedent(np.arange(2.0, 4.1, 0.1), 'cgpa')
