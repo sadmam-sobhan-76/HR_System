@@ -15,17 +15,17 @@ cgpa = ctrl.Antecedent(np.arange(5, 21, 1), 'cgpa')       # CGPA scoring: 5, 10,
 experience = ctrl.Antecedent(np.arange(7, 22, 1), 'experience')  # Experience scoring: 7, 14, 21
 match_score = ctrl.Consequent(np.arange(0, 101, 1), 'match_score')  # Total score out of 100
 
-# Define fuzzy membership functions
-skills.automf(3)  # Low, Medium, High
-cgpa.automf(3)    # Low, Medium, High
-experience.automf(3)  # Low, Medium, High
-match_score.automf(3)  # Low, Medium, High
+# Define fuzzy membership functions automatically
+skills.automf(3)  # Creates poor, average, good
+cgpa.automf(3)    # Creates poor, average, good
+experience.automf(3)  # Creates poor, average, good
+match_score.automf(3)  # Creates poor, average, good
 
-# Define fuzzy rules
-rule1 = ctrl.Rule(skills['high'] & cgpa['high'] & experience['high'], match_score['high'])
-rule2 = ctrl.Rule(skills['medium'] & cgpa['medium'] & experience['medium'], match_score['medium'])
-rule3 = ctrl.Rule(skills['low'] | cgpa['low'] | experience['low'], match_score['low'])
-rule4 = ctrl.Rule(skills['medium'] & cgpa['high'] & experience['medium'], match_score['high'])
+# Define fuzzy rules with default membership function names
+rule1 = ctrl.Rule(skills['good'] & cgpa['good'] & experience['good'], match_score['good'])
+rule2 = ctrl.Rule(skills['average'] & cgpa['average'] & experience['average'], match_score['average'])
+rule3 = ctrl.Rule(skills['poor'] | cgpa['poor'] | experience['poor'], match_score['poor'])
+rule4 = ctrl.Rule(skills['average'] & cgpa['good'] & experience['average'], match_score['good'])
 
 # Create the control system
 matching_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4])
