@@ -12,20 +12,27 @@ CORS(app, resources={r"/*": {"origins": ["https://hr-expert-system.netlify.app"]
 # Define fuzzy variables
 skills = ctrl.Antecedent(np.arange(0, 29, 1), 'skills')  # Max 14 skills, 2 points each
 cgpa = ctrl.Antecedent(np.arange(5, 21, 1), 'cgpa')       # CGPA scoring: 5, 10, 15, 20
-experience = ctrl.Antecedent(np.arange(7, 22, 1), 'experience')  # Experience scoring: 7, 14, 21
+experience = ctrl.Antecedent(np.arange(0, 22, 1), 'experience')  # Experience scoring: 0 or >0
 match_score = ctrl.Consequent(np.arange(0, 101, 1), 'match_score')  # Total score out of 100
 
-# Define fuzzy membership functions automatically
+# Define fuzzy membership functions
 skills.automf(3)  # Creates poor, average, good
 cgpa.automf(3)    # Creates poor, average, good
-experience.automf(3)  # Creates poor, average, good
-match_score.automf(3)  # Creates poor, average, good
 
-# Define fuzzy rules with default membership function names
-rule1 = ctrl.Rule(skills['good'] & cgpa['good'] & experience['good'], match_score['good'])
-rule2 = ctrl.Rule(skills['average'] & cgpa['average'] & experience['average'], match_score['average'])
-rule3 = ctrl.Rule(skills['poor'] | cgpa['poor'] | experience['poor'], match_score['poor'])
-rule4 = ctrl.Rule(skills['average'] & cgpa['good'] & experience['average'], match_score['good'])
+# Custom membership for experience
+experience['low'] = fuzz.trimf(experience.universe, [0, 0, 1])
+experience['high'] = fuzz.trimf(experience.universe, [1, 22, 22])
+
+# Define membership for match score
+match_score['poor'] = fuzz.trimf(match_score.universe, [0, 25, 50])
+match_score['average'] = fuzz.trimf(match_score.universe, [40, 60, 80])
+match_score['excellent'] = fuzz.trimf(match_score.universe, [70, 90, 100])
+
+# Define fuzzy rules
+rule1 = ctrl.Rule(skills['good'] & cgpa['good'] & experience['high'], match_score['excellent'])
+rule2 = ctrl.Rule(skills['average'] & cgpa['average'] & experience['high'], match_score['average'])
+rule3 = ctrl.Rule(skills['poor'] | cgpa['poor'] | experience['low'], match_score['poor'])
+rule4 = ctrl.Rule(skills['average'] & cgpa['good'] & experience['high'], match_score['excellent'])
 
 # Create the control system
 matching_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4])
@@ -75,12 +82,7 @@ def process_csv():
 
             # Experience score
             experience_value = row["Experience(In Months)"]
-            if experience_value == 0:
-                experience_score = 7
-            elif experience_value == 12:
-                experience_score = 14
-            else:
-                experience_score = 21
+            experience_score = 21 if experience_value > 0 else 0  # High contribution for >0 months
 
             # Input values into fuzzy system
             matching_simulation.input['skills'] = skills_score
