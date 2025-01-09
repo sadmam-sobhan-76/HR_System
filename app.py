@@ -48,15 +48,22 @@ def home():
 @app.route("/process", methods=["POST"])
 def process_csv():
     try:
+        # Debugging: Log the incoming request files and form data
+        print("Request Files:", request.files)
+        print("Request Form:", request.form)
+
+        # Validate file input
         if "file" not in request.files or request.files["file"].filename == "":
             return jsonify({"error": "File upload is required"}), 400
         file = request.files["file"]
 
+        # Validate form data
         required_skills = request.form.get("required_skills")
         if not required_skills:
             return jsonify({"error": "Required skills input is missing"}), 400
         required_skills = required_skills.split(",")
 
+        # Read the CSV file
         df = pd.read_csv(file)
         required_columns = [
             "Candidate Full Name", "Required Skills", "CGPA", "Experience(In Months)"
@@ -95,9 +102,13 @@ def process_csv():
                 else:
                     experience_score = 21
 
+                # Debugging: Log input values for fuzzy system
+                print(f"Skills Score: {skills_score}, CGPA Score: {cgpa_score}, Experience Score: {experience_score}")
+
                 matching_simulation.input['skills'] = skills_score
                 matching_simulation.input['cgpa'] = cgpa_score
                 matching_simulation.input['experience'] = experience_score
+
                 matching_simulation.compute()
                 return matching_simulation.output['match_score']
 
@@ -112,6 +123,7 @@ def process_csv():
 
     except Exception as e:
         error_message = {"error": str(e), "traceback": traceback.format_exc()}
+        print("Error:", error_message)  # Debugging: Print the error details
         return jsonify(error_message), 500
 
 if __name__ == "__main__":
