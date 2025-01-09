@@ -7,7 +7,7 @@ from skfuzzy import control as ctrl
 import traceback
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://hr-expert-system-portal.netlify.app"]}})
+CORS(app, resources={r"/*": {"origins": ["hr-job-portal.netlify.app"]}})
 
 # Define fuzzy variables
 skills = ctrl.Antecedent(np.arange(0, 29, 1), 'skills')  # Max 14 skills, 2 points each
