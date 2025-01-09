@@ -7,7 +7,7 @@ from skfuzzy import control as ctrl
 import traceback
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://hr-expert-system.netlify.app"]}})
+CORS(app, resources={r"/*": {"origins": ["hr-expert-system.netlify.app"]}})
 
 # Define fuzzy variables
 skills = ctrl.Antecedent(np.arange(0, 29, 1), 'skills')  # Max 14 skills, 2 points each
@@ -78,39 +78,55 @@ def process_csv():
         ]}
 
         def calculate_match(row):
-            # Calculate skills score
-            candidate_skills = row["Required Skills"].split(", ")
-            matched_skills = set(candidate_skills) & set(skill_points.keys())
-            skills_score = len(matched_skills) * 2  # 2 points per matched skill
+            try:
+                # Calculate skills score
+                candidate_skills = row["Required Skills"].split(", ")
+                matched_skills = set(candidate_skills) & set(skill_points.keys())
+                skills_score = len(matched_skills) * 2  # 2 points per matched skill
 
-            # Calculate CGPA score
-            cgpa_value = float(row["CGPA"].split("-")[1])  # Use the upper bound of the CGPA range
-            if 2.00 <= cgpa_value <= 2.49:
-                cgpa_score = 5
-            elif 2.50 <= cgpa_value <= 2.99:
-                cgpa_score = 10
-            elif 3.00 <= cgpa_value <= 3.49:
-                cgpa_score = 15
-            elif 3.50 <= cgpa_value <= 4.00:
-                cgpa_score = 20
+                # Calculate CGPA score
+                cgpa_value = float(row["CGPA"].split("-")[1])  # Use the upper bound of the CGPA range
+                if 2.00 <= cgpa_value <= 2.49:
+                    cgpa_score = 5
+                elif 2.50 <= cgpa_value <= 2.99:
+                    cgpa_score = 10
+                elif 3.00 <= cgpa_value <= 3.49:
+                    cgpa_score = 15
+                elif 3.50 <= cgpa_value <= 4.00:
+                    cgpa_score = 20
 
-            # Calculate experience score
-            experience_value = row["Experience(In Months)"]
-            if experience_value == 0:
-                experience_score = 7
-            elif experience_value == 12:
-                experience_score = 14
-            else:
-                experience_score = 21
+                # Calculate experience score
+                experience_value = row["Experience(In Months)"]
+                if experience_value == 0:
+                    experience_score = 7
+                elif experience_value == 12:
+                    experience_score = 14
+                else:
+                    experience_score = 21
 
-            # Input values into the fuzzy system
-            matching_simulation.input['skills'] = skills_score
-            matching_simulation.input['cgpa'] = cgpa_score
-            matching_simulation.input['experience'] = experience_score
+                # Validate input ranges
+                if not (0 <= skills_score <= 28):
+                    raise ValueError(f"Invalid skills score: {skills_score}")
+                if not (5 <= cgpa_score <= 20):
+                    raise ValueError(f"Invalid CGPA score: {cgpa_score}")
+                if not (7 <= experience_score <= 21):
+                    raise ValueError(f"Invalid experience score: {experience_score}")
 
-            # Compute fuzzy match score
-            matching_simulation.compute()
-            return matching_simulation.output['match_score']
+                # Debugging: Log input values
+                print(f"Skills Score: {skills_score}, CGPA Score: {cgpa_score}, Experience Score: {experience_score}")
+
+                # Input values into the fuzzy system
+                matching_simulation.input['skills'] = skills_score
+                matching_simulation.input['cgpa'] = cgpa_score
+                matching_simulation.input['experience'] = experience_score
+
+                # Compute fuzzy match score
+                matching_simulation.compute()
+                return matching_simulation.output['match_score']
+
+            except Exception as e:
+                print(f"Error in calculate_match: {str(e)}")
+                raise
 
         # Apply the scoring to each candidate
         df["Matching Score"] = df.apply(calculate_match, axis=1)
