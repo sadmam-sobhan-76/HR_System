@@ -52,6 +52,9 @@ def process_csv():
 
         # Validate form data
         required_skills = request.form.get("required_skills")
+        min_cgpa = float(request.form.get("min_cgpa"))
+        min_experience = int(request.form.get("min_experience"))
+
         if not required_skills:
             return jsonify({"error": "Required skills input is missing"}), 400
         required_skills = required_skills.split(",")
@@ -69,9 +72,11 @@ def process_csv():
             matched_skills = set(candidate_skills) & set(required_skills)
             skills_score = len(matched_skills) * 2  # 2 points per matched skill
 
-            # CGPA score
+            # CGPA score based on minimum CGPA input
             cgpa_value = float(row["CGPA"].split("-")[1])  # Use the upper bound of the CGPA range
-            if 2.00 <= cgpa_value <= 2.49:
+            if cgpa_value < min_cgpa:
+                return 0  # Automatically disqualify if CGPA doesn't meet the minimum
+            if min_cgpa <= cgpa_value <= 2.49:
                 cgpa_score = 5
             elif 2.50 <= cgpa_value <= 2.99:
                 cgpa_score = 10
@@ -80,8 +85,10 @@ def process_csv():
             elif 3.50 <= cgpa_value <= 4.00:
                 cgpa_score = 20
 
-            # Experience score
+            # Experience score based on minimum experience input
             experience_value = row["Experience(In Months)"]
+            if experience_value < min_experience:
+                return 0  # Automatically disqualify if experience doesn't meet the minimum
             experience_score = 21 if experience_value > 0 else 0  # High contribution for >0 months
 
             # Input values into fuzzy system
