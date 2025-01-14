@@ -16,23 +16,26 @@ experience = ctrl.Antecedent(np.arange(0, 22, 1), 'experience')  # Experience sc
 match_score = ctrl.Consequent(np.arange(0, 101, 1), 'match_score')  # Total score out of 100
 
 # Define fuzzy membership functions
-skills.automf(3)  # Creates poor, average, good
-cgpa.automf(3)    # Creates poor, average, good
+skills['low'] = fuzz.trimf(skills.universe, [0, 10, 15])
+skills['medium'] = fuzz.trimf(skills.universe, [10, 15, 20])
+skills['high'] = fuzz.trimf(skills.universe, [15, 28, 28])
 
-# Custom membership for experience
-experience['low'] = fuzz.trimf(experience.universe, [0, 0, 1])
-experience['high'] = fuzz.trimf(experience.universe, [1, 22, 22])
+cgpa['low'] = fuzz.trimf(cgpa.universe, [5, 10, 15])
+cgpa['medium'] = fuzz.trimf(cgpa.universe, [10, 15, 20])
+cgpa['high'] = fuzz.trimf(cgpa.universe, [15, 20, 20])
 
-# Define membership for match score
+experience['low'] = fuzz.trimf(experience.universe, [0, 0, 10])
+experience['high'] = fuzz.trimf(experience.universe, [10, 22, 22])
+
 match_score['poor'] = fuzz.trimf(match_score.universe, [0, 25, 50])
 match_score['average'] = fuzz.trimf(match_score.universe, [40, 60, 80])
 match_score['excellent'] = fuzz.trimf(match_score.universe, [70, 90, 100])
 
 # Define fuzzy rules
-rule1 = ctrl.Rule(skills['good'] & cgpa['good'] & experience['high'], match_score['excellent'])
-rule2 = ctrl.Rule(skills['average'] & cgpa['average'] & experience['high'], match_score['average'])
-rule3 = ctrl.Rule(skills['poor'] | cgpa['poor'] | experience['low'], match_score['poor'])
-rule4 = ctrl.Rule(skills['average'] & cgpa['good'] & experience['high'], match_score['excellent'])
+rule1 = ctrl.Rule(skills['high'] & cgpa['high'] & experience['high'], match_score['excellent'])
+rule2 = ctrl.Rule(skills['medium'] & cgpa['medium'] & experience['high'], match_score['average'])
+rule3 = ctrl.Rule(skills['low'] | cgpa['low'] | experience['low'], match_score['poor'])
+rule4 = ctrl.Rule(skills['medium'] & cgpa['high'] & experience['high'], match_score['excellent'])
 
 # Create the control system
 matching_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4])
@@ -98,7 +101,12 @@ def process_csv():
 
             # Compute fuzzy match score
             matching_simulation.compute()
-            return matching_simulation.output['match_score']
+            match_score_value = matching_simulation.output['match_score']
+
+            # Scale to 100%
+            max_possible_score = 28 + 20 + 21  # Max possible scores
+            actual_score = (skills_score + cgpa_score + experience_score) / max_possible_score * 100
+            return round(actual_score, 2)
 
         # Apply scoring to each candidate
         df["Matching Score"] = df.apply(calculate_match, axis=1)
